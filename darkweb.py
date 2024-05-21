@@ -45,6 +45,7 @@ def start_tor():
     """Função para iniciar o Tor."""
     global tor_process
     logging.info(term.format("Starting Tor:\n", term.Attr.BOLD))
+    start_time = time.time()
 
     tor_process = stem.process.launch_tor_with_config(
         config={
@@ -54,13 +55,16 @@ def start_tor():
         init_msg_handler=print_bootstrap_lines,
     )
 
+    end_time = time.time()
+    logging.info(f"Tor started in {end_time - start_time:.2f} seconds")
     logging.info(term.format("\nChecking our endpoint:\n", term.Attr.BOLD))
     logging.info(term.format(query("https://api.myip.com"), term.Color.BLUE))
 
 def setup_webdriver():
     """Função para configurar o WebDriver do Selenium para usar o proxy Tor."""
     logging.info(term.format("Initializing WebDriver with Tor proxy...\n", term.Attr.BOLD))
-    
+    start_time = time.time()
+
     options = Options()
     PROXY_HOST = "127.0.0.1"
     options.set_preference("network.proxy.type", 1)
@@ -69,29 +73,51 @@ def setup_webdriver():
     options.set_preference('network.proxy.socks_remote_dns', True)
 
     driver = webdriver.Firefox(options=options)
+
+    end_time = time.time()
+    logging.info(f"WebDriver initialized in {end_time - start_time:.2f} seconds")
     return driver
 
 def access_mainpage(driver, url):
     """Função para acessar a página inicial usando o Selenium."""
     logging.info(term.format("Visiting an onion website using Selenium with Tor proxy...\n", term.Attr.BOLD))
+    start_time = time.time()
+
     driver.get(url)
+
+    end_time = time.time()
+    logging.info(f"Main page accessed in {end_time - start_time:.2f} seconds")
 
 def submit_search(driver):
     """Função para submeter uma busca no fórum."""
+    start_time = time.time()
+
     keywords_input = driver.find_element(By.NAME, "keywords")
     keywords_input.send_keys("hack")
     submit_button = driver.find_element(By.NAME, "submit")
     submit_button.click()
 
+    end_time = time.time()
+    logging.info(f"Search submitted in {end_time - start_time:.2f} seconds")
+
 def check_block_error(driver):
     """Função para verificar se houve erro de bloqueio."""
+    start_time = time.time()
+
     page_source = driver.page_source
     if re.search("Sorry, but you can only perform one search every", page_source): 
-        return True
-    return False
+        result = True
+    else:
+        result = False
+
+    end_time = time.time()
+    logging.info(f"Block error checked in {end_time - start_time:.2f} seconds")
+    return result
 
 def getting_subjects(driver):
     """Função para extrair tópicos, usuários e links da página."""
+    start_time = time.time()
+
     topicos = []
     usuarios = []
     links = []
@@ -110,6 +136,8 @@ def getting_subjects(driver):
     for link in soup.find_all("a", class_="subject_old"):
         links.append("http://suprbaydvdcaynfo4dgdzgxb4zuso7rftlil5yg5kqjefnw4wq4ulcad.onion/" + link['href'])
 
+    end_time = time.time()
+    logging.info(f"Subjects extracted in {end_time - start_time:.2f} seconds")
     return topicos, usuarios, links
 
 def acessando_links(driver, links, tps, usr):
@@ -122,6 +150,8 @@ def acessando_links(driver, links, tps, usr):
 
     for index, link in enumerate(links):
         logging.info(f"Acessando o link {index + 1} de {len(links)}: {link}")
+        start_time = time.time()
+
         driver.get(link)
         time.sleep(2)
 
@@ -159,6 +189,8 @@ def acessando_links(driver, links, tps, usr):
                 logging.warning("Não foi possível encontrar a próxima página")
                 break  # Sair do loop se não houver mais botão "Next"
 
+        end_time = time.time()
+        logging.info(f"Link {index + 1} accessed and content extracted in {end_time - start_time:.2f} seconds")
         subjects.append(subject)
 
     return subjects
